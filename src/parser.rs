@@ -19,6 +19,20 @@ impl Parser {
         Self { optimizations }
     }
 
+    fn try_parse_szeroloop(&self, next_tokens: &[Token], ast: &mut Vec<Ir>) -> Option<usize> {
+        if !self.optimizations.szero_loop() {
+            return None;
+        }
+
+        if !matches!(next_tokens[0..2], [Token::ValDecr, Token::LoopEnd]) {
+            return None;
+        }
+
+        ast.push(Ir::Szero);
+
+        Some(2)
+    }
+
     fn parse_ptr_incr(&self, next_tokens: &[Token], ast: &mut Vec<Ir>) -> usize {
         if !self.optimizations.instr_compression() {
             ast.push(Ir::PtrIncr(1));
@@ -139,9 +153,14 @@ impl Parser {
                     0
                 }
                 Token::LoopStart => {
-                    loops.push(ast.len());
-                    ast.push(Ir::LoopStart(0));
-                    0
+                    if let Some(offset) = self.try_parse_szeroloop(&tokens[i..], &mut ast) {
+                        offset
+                    } else {
+                        loops.push(ast.len());
+                        ast.push(Ir::LoopStart(0));
+
+                        0
+                    }
                 }
                 Token::LoopEnd => {
                     let result = loops.pop();

@@ -4,17 +4,20 @@ pub use memory::Memory;
 
 use crate::ast::Ir;
 use std::io::Read;
+use std::io::Write;
 
-pub struct Runtime {
+pub struct Runtime<W: Write> {
     pc: usize,
     memory: Memory,
+    out: W,
 }
 
-impl Runtime {
-    pub fn new() -> Self {
+impl<W: Write> Runtime<W> {
+    pub fn new(writer: W) -> Self {
         Self {
             pc: 0,
             memory: Memory::new(),
+            out: writer,
         }
     }
 
@@ -27,7 +30,7 @@ impl Runtime {
                 Ir::ValIncr(v) => self.memory.add(v),
                 Ir::ValDecr(v) => self.memory.sub(v),
                 Ir::Stdout => {
-                    print!("{}", self.memory.read_value() as char);
+                    self.out.write(&[self.memory.read_value()]).unwrap();
                 }
 
                 Ir::Stdin => {
@@ -49,6 +52,7 @@ impl Runtime {
                 Ir::LoopEnd(jmp_back) => {
                     self.pc = jmp_back;
                 }
+                Ir::Szero => self.memory.set_value(0),
                 _ => todo!(),
             }
             self.pc += 1;

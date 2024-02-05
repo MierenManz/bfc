@@ -22,10 +22,10 @@ fn main() {
     let ir = parse(file_path, args.get(2).is_some()).unwrap();
     let parsing_time = start.elapsed();
 
-    Runtime::new().execute(&ir);
+    Runtime::new(std::io::stdout().lock()).execute(&ir);
     let running_time = start.elapsed();
 
-    println!("Parsing time: {}us", parsing_time.as_micros());
+    println!("\n\nParsing time: {}us", parsing_time.as_micros());
     println!(
         "Running time: {}us",
         running_time.as_micros() - parsing_time.as_micros()
